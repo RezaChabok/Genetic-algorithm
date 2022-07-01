@@ -6,7 +6,6 @@ from sys import exit
 flag = False
 crms = []
 x = 0
-g_best = []  # gbest
 p_best = []  # pbest
 avg_fit_crm = []
 xi_end = 600
