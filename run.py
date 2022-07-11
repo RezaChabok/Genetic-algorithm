@@ -1,37 +1,59 @@
 from math import cos, sqrt
-import random
-import matplotlib.pyplot as plt
-import numpy as np
+from random import randrange
+from  matplotlib.pyplot import subplots, show
+from numpy import arange
 from sys import exit
-flag = False
-crms = []
+
 counter = 0
-x = 0
-g_best = []  # gbest
+x = []
+# select = []
 p_best = []  # pbest
-avg_fit_crm = []
-xi_end = 600
+x_best = [] # x best
+avg_fit_crm = [] #avg
+xi_end = 600 
 pop = 200
 generates = 1000
 end = 20
-x_save = []
+x_save1 = []
+x_save2 = []
 sum_all = 0 
-count = 0
-def start(xi):
-    global xi_end, x_save, crms
-    a = 1.0000 / 4000
-    xi = random.randrange(0, xi_end)
-    sums = 0
-    for j in range(1, 11):
-        sums += (xi * xi)
-    multi = cos(xi / sqrt(1)) + 1
-    for j in range(2, 11):
-        multi *= cos(xi / sqrt(j)) + 1
-    result = (a * sums) - multi
-    # avg += result
-    crms.append(result)
-    x_save.append(xi)
-    return(result)
+gen1 = []
+gen2 = []
+best = 0
+
+
+
+
+
+def start(xi,flag):
+    global xi_end, x_save, crms, sum_all, gen1
+
+    # if flag == "Create":
+    #     for i in range(0,200):
+    #         a = 1.0000 / 4000
+    #         xi = randrange(0, xi_end)
+    #         sums = 0
+    #         for j in range(1, 11):
+    #             sums += (xi * xi)
+    #         multi = cos(xi / sqrt(1)) + 1
+    #         for j in range(2, 11):
+    #             multi *= cos(xi / sqrt(j)) + 1
+    #         result = (a * sums) - multi
+    #         # avg += result
+    #         gen1.append(result)
+    #         sum_all += result
+    #         x_save.append(xi)
+
+    if flag == "Calculate":
+        a = 1.0/ 4000.0
+        sums = 0.0
+        for j in range(1, 11):
+            sums += (xi * xi)
+        multi = cos(xi / sqrt(1))
+        for j in range(2, 11):
+            multi *= cos(xi / sqrt(j))
+        result = ((a * sums) - (multi)) + 1.0
+        return(result)
     # avg_fit_crm.append(avg / pop)
     
 
@@ -61,61 +83,88 @@ def start(xi):
 #         print("{} Generated.".format(counter))
 
 def best_select():
-        global crms, select, x, x_save
-        x_save.append(x)
-        crms.append(select)
-        crms_save = crms
-        sorted_crms = sorted(crms_save)
-        index = crms.index(sorted_crms[0])
-        x = x_save[index]
+        global select, x, x_save1, x_save2, gen1, gen2
+        # x_save += x
+        # gen1 += select
+        # select = []
+        sorted_gen1 = sorted(gen1)
+        sorted_gen2 = sorted(gen2)
+        index1 = gen1.index(sorted_gen1[0])
+        x.append(x_save1[index1])
+        # select.append(gen1[index1])
+        index2 = gen2.index(sorted_gen2[0])
+        x.append(x_save2[index2])
+        # select.append(gen2[index2])
+        if x_save1[index1] < x_save2[index2] :
+            x = x_save1
+        else : x = x_save2
+
 
 
 def crossover():
-    global x, x_save, crms, sum_all
-    a = random.randrange(-1*(len(x_save)-1),len(x_save)-1)
-    if a > 0:
-        print("We had a crossover in the {} generation".format(counter))
-        for i in range(a):
-            b = random.randrange(0,a)
-            sum_all -= crms[b]
-            x_save[b] = x_save[b] - x
-            crms[b] = start(x_save[b])
-            sum_all += crms[b]
+    global x, x_save1, x_save2, crms, sum_all, gen1, gen2, p_best
+    b = randrange(10, 200)
+    c = 200 - b
+    gen1 = []
+    gen1 = gen2
+    x_save1 = x_save2
+    x_save2 = x[:b]+x_save1[:c//2]+x_save2[:c//2+(c%2)]
+    gen2 = []
+    for i in range(len(x_save2)):
+        gen2.append(start(x_save2[i],"Calculate"))
+    print("We had {} crossover in the {} generation".format(b,counter))
+
+
+def avg(x):
+    z = 0
+    for i in range(len(x)):
+        z += x[i]
+    return z/len(x)
 
 
 
 def mutation():
-    global x_save, crms, sum_all
-    copy_crms = crms
-    sorted_crms = sorted(copy_crms)
-    if sorted_crms[0]+sorted_crms[1] > sorted_crms[0]/2.0:
-        a = random.randrange(-1*(len(x_save)-1),len(x_save)-1)
-        if a > 0:
-            print("We had a mutation in the {} generation".format(counter))
-            for i in range(a):
-                b = random.randrange(0,a)
-                sum_all -= crms[b]
-                x_save[b]=x_save[b]/2.0
-                crms[b] = start(x_save[b])
-                sum_all += crms[b]
+    global gen2, p_best, x, x_save2, best, counter, avg_fit_crm, x_best
+    num = randrange(-200,200)
+    selected = []
+    if num > 0 :
+        for i in range(num):
+            random_select = randrange(0,200)
+            if x_save2[random_select] != 0:
+                if random_select not in selected:
+                    selected.append(random_select)
+                    x_save2[random_select] = best/x_save2[random_select]
+                    gen2[random_select] = start(x_save2[random_select], "Calculate")
+                
+    sorted_gen2 = sorted(gen2)
+    p_best.append(sorted_gen2[0])
+    x_best.append(x_save2[gen2.index(sorted_gen2[0])])
+    avg_fit_crm.append(avg(gen2))
+      
+    if sorted_gen2[0] < start(best, "Calculate") :
+        index  = gen2.index(sorted_gen2[0])
+        best = x_save2[index]
+    
+    if num <= 0: num = 0
+    print("We had {} mutation in the {} generation.".format(num, counter))
+ 
+ 
+# def ret (x):
+#         a = 1.0/ 4000.0
+#         sums = 0.000
+#         for j in range(1, 11):
+#             sums += (x * x)
+#         multi = cos(x / sqrt(1)) + 1
+#         for j in range(2, 11):
+#             multi *= cos(x / sqrt(j)) + 1
+#         result = (a * sums) - multi
+#         return(result)     
 
-def seter():
-    global crms, p_best, select, avg_fit_crm, x, sum_all, x_save, count
-    crms_save = crms
-    sorted_crms = sorted(crms_save)
-    p_best.append(sorted_crms[0])
-    select = sorted_crms[0]
-    index = crms.index(sorted_crms[0])
-    x = x_save[index]
-    avg_fit_crm.append(sum_all/count)
-    count = 0
-    sum_all = 0
-    crms = []
-    x_save = []
 
 
 def check():
         global p_best, end
+
         last = -1 * end
         obj = p_best[last]
         for x in p_best[last:]:
@@ -123,50 +172,71 @@ def check():
                 return False
         return True
 
-def show():
-        global p_best, avg_fit_crm, x
 
-        print("x in function:",x)
+def shower():
+        global p_best, avg_fit_crm, best, x_best
+
+        #print(ret(best))
+        print("\nx in function:", best)
         print("Best result of function:",min(p_best))
-        fig, ax = plt.subplots()
-        z = np.arange(max(len(p_best), len(avg_fit_crm)))
-        ax.plot(z, p_best, label='Best of pop', linewidth=1)
-        ax.plot(z, avg_fit_crm, label='Avg', linewidth=1)
-        ax.set(xlabel='N',
-               ylabel='Fitness',
-               title='result')
+
+        fig, ax = subplots()
+        ax.plot(arange((len(p_best))), p_best, label='fitness of best x', linewidth=1, marker='o')
+        ax.plot(arange(len(avg_fit_crm)), avg_fit_crm, label='Avg', linewidth=1, marker='o')
+        ax.plot( arange(len(x_best)), x_best, label='Best x', linewidth=1, marker='o')
+        ax.set(xlabel='Generation',
+               ylabel='Value',
+               title='Minimum of function')
         ax.legend()
-        plt.show()
-
-
-
-xi = random.randrange(0, 600)
-sums = 0
-for j in range(1, 11):
-    sums += (xi * xi)
-multi = cos(xi / sqrt(1)) + 1
-for j in range(2, 11):
-    multi *= cos(xi / sqrt(j)) + 1
-result = (1.000 / 4000 * sums) - multi
-select = result
-x = xi
-while True:
-    for i in range(generates):
-        for j in range(pop - 1):
-            start(random.randrange(0, 600))
-            count +=1
-        counter += 1
-        best_select()
-        crossover()
-        mutation()
-        seter()
-        
-        print("{} Generated.".format(counter))    
-        if i > 18:
-            flag = check()
-        if flag: break
-    if flag:
         show()
-        exit("End")
-    else:
-        print("Again!")
+
+
+for i in range(pop):
+            a = randrange(-1*(xi_end), xi_end)
+            b = randrange(-1*(xi_end), xi_end)
+            c = start(a, "Calculate")
+            d = start(b, "Calculate")
+            gen1.append(c)
+            gen2.append(d)
+            x_save1.append(a)
+            x_save2.append(b)
+
+
+save = sorted(gen1)
+index = gen1.index(save[0])
+best = x_save1[index]
+avg_fit_crm.append(avg(gen1))
+p_best.append(save[0])
+x_best.append(x_save1[gen1.index(save[0])])
+
+for i in range(2,generates):
+    counter += 1
+    best_select()
+    crossover()
+    mutation()
+
+    if i > end - 1 :
+        if check():
+            shower()
+            exit()
+shower()
+exit()
+# while True:
+#     for i in range(generates):
+        
+#             count +=1
+#         counter += 1
+#         best_select()
+#         crossover()
+#         mutation()
+#         seter()
+        
+#         print("{} Generated.".format(counter))    
+#         if i >= (end - 1):
+#             flag = check()
+#         if flag: break
+#     if flag:
+#         show()
+#         exit("End")
+#     else:
+#         print("Again!")
