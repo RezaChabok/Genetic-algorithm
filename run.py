@@ -82,6 +82,7 @@ def start(xi,flag):
 #         print("{} Generated.".format(counter))
 
 def best_select():
+        # w
         global select, x, x_save1, x_save2, gen1, gen2
         # x_save += x
         # gen1 += select
